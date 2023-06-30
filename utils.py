@@ -1,4 +1,5 @@
 import pandas as pd
+from sklearn.preprocessing import MinMaxScaler
 import numpy as np
 
 def read_data(filename):
@@ -10,8 +11,14 @@ def read_data(filename):
     return data
 
 def normalize_data(data):
-    #  the scaled values for each column using the min-max scaling formula
-    return data.iloc[:,1:].apply(lambda x : (x - min(x)) / (max(x) - min(x)))
+    columns_to_normalize = ['Open', 'High', 'Low', 'Close', 'Volume']
+    # Scale the selected columns using min-max scaling
+    scale = MinMaxScaler(feature_range=(-1, 1))
+    data.loc[:, columns_to_normalize] = scale.fit_transform(data.loc[:, columns_to_normalize])
+
+    return data
+
+    # return data.iloc[:,1:].apply(lambda x : (x - min(x)) / (max(x) - min(x)))
 
 def div_data(data):
     times = sorted(data.index.values)

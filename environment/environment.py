@@ -50,7 +50,6 @@ class MarketEnv:
         return self.data[(self._current - self.window_size +1): self._current+1]
 
     def step(self, action):
-        self.prev.append(self._current)
         self._current += 1
         
         if self._current == self._end:
@@ -69,7 +68,7 @@ class MarketEnv:
             
         if trade:
             self._position = self._position.opposite()
-            # self.prev =  self._current
+            self.prev.append(self._current)
         
         self._pos_hist.append(self._position)
         step = self._get_state()
@@ -91,8 +90,7 @@ class MarketEnv:
     def _update_profit(self, action):
         trade = False
         if((action == Actions.Buy.value and self._position == Position.Short) or
-           (action == Actions.Sell.value and self._position == Position.Long) or
-           (action == Actions.Hold.value)):
+           (action == Actions.Sell.value and self._position == Position.Long)):
             trade = True
         
         if trade or self.done:
@@ -104,25 +102,24 @@ class MarketEnv:
             if action == Actions.Sell.value:
                 if self.no_shares > 0:
                     self.holdings = self.no_shares * current_price
+                    # print(f'{self.holdings}, {current_price}, {self.no_shares}')
                     past_profit = []
                     for price in prev_prices:
                         past_profit.append(self.no_shares * price)
-                    self._total_profit += (self.holdings - max(past_profit))
+                    self._total_profit += ((self.no_shares * current_price) - max(past_profit))
                     self.no_shares = 0
-                else :
-                    pass
-
             elif action == Actions.Buy.value:
                 if self.holdings > 0 :
-                    self.no_shares = self.holdings // current_price
+                    self.no_shares = self.holdings / current_price
+                    # print(f'{self.holdings}, {current_price}, {self.no_shares}')
                     past_profit = []
                     for price in prev_prices:
                         past_profit.append(self.no_shares * price)
                     self._total_profit += (min(past_profit) - (self.no_shares * current_price))
-                    self.holdings = 0 
+                    self.holdings = 0
                 
     def _calculate_reward(self, action):        
         if action == Actions.Buy.value or action == Actions.Sell.value:
-            return self._total_profit - self.holdings
+            return int(self._total_profit - self.holdings)
         else:
             return 0

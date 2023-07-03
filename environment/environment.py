@@ -27,7 +27,7 @@ class MarketEnv:
         self.observation_space = Box(low = -np.inf, high = np.inf, size = self.shape, dtype = np.float64)
         
         self._start = self.window_size
-        self._end = len(self.data.index[-1])-1
+        self._end = len(self.data.index)-1
         self.reset()
         
     # Resets the environment for each episode
@@ -79,7 +79,7 @@ class MarketEnv:
         
     def _update_hist(self, info):
         if not self.hist:
-            self.hist = {key: [] for key in info.keys}
+            self.hist = {key: [] for key in info.keys()}
         for key, value in info.items():
             self.hist[key].append(value)
         
@@ -93,13 +93,22 @@ class MarketEnv:
         if trade or self.done:
             current_price = self.data.loc[self._current, 'Close']
             prev_price = self.data.loc[self._last, 'Close']
-            shares = self._total_profit / prev_price
+            # print(f'{current_price}, {prev_price}, {action}, {self._position}')
             
-            if self._position == Position.Long:
+            if self._position == Position.Long and action == Actions.Sell.value:
+                shares = self._total_profit / prev_price
                 self._total_profit = shares * current_price
-            elif self._position == Position.Short:
-                self._total_profit = shares * (current_price - prev_price)
+            elif self._position == Position.Short and action == Actions.Buy.value:
+                self._total_profit = self._total_profit * (current_price - prev_price) / prev_price
                 
     def _calculate_reward(self, action):
-        return 1
-    
+        current_price = self.data.loc[self._current, 'Close']
+        prev_price = self.data.loc[self._last, 'Close']
+        shares = self._total_profit / prev_price
+        
+        if action == Actions.Buy.value:
+            return shares * (current_price - prev_price)
+        elif action == Actions.Sell.value:
+            return shares * (prev_price - current_price)
+        else:
+            return 0

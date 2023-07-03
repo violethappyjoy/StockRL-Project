@@ -7,6 +7,13 @@ train = normalize_data(train)
 test = normalize_data(test)
 
 env = MarketEnv(train)
+# print(env.action_space.sample())
 
 # print(train.head())
-print(env.done)
+while True:
+    action = env.action_space.sample()
+    n_state, reward, done, info = env.step(action)
+    # print(f'info: {info}')
+    if done:
+        print(f'info: {info}')
+        break

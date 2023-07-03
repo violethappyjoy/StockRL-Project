@@ -8,7 +8,7 @@ class Box:
         self. dtype = dtype
         
     def sample(self):
-        return np.random.uniform(low= self.low, high=self.high, size= self.shape).astype(self.dtype)
+        return np.random.uniform(low= self.low, high=self.high, size= self.shape).astype(self.dtype) # type: ignore
     def contains(self, x):
         return np.all(x >= self.low) and np.all(x <= self.high)
     def __repr__(self):
@@ -22,4 +22,4 @@ class OneD:
     def contains(self, x):
         return 0 <= x <self.n
     def __repr__(self):
-        return (f"Discrete(n={self.n})")
+        return (f"Action_Space(n={self.n})")

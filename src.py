@@ -9,4 +9,4 @@ test = normalize_data(test)
 env = MarketEnv(train)
 
 # print(train.head())
-print(env.signal.shape[1])
+print(env.done)

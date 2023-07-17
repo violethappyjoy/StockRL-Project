@@ -120,6 +120,6 @@ class MarketEnv:
                 
     def _calculate_reward(self, action):        
         if action == Actions.Buy.value or action == Actions.Sell.value:
-            return int(self._total_profit - self.holdings)
+            return int(self._total_profit - self.init_amount)
         else:
             return 0

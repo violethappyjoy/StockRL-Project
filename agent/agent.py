@@ -1,7 +1,7 @@
-import keras
+import tensorflow.keras as keras
 from keras.models import Sequential
 import tensorflow.keras.backend as backend
-from keras.layers import Dense, Conv2D, Flatten, Dropout, Activation, MaxPooling2D
+from keras.layers import Dense, Conv1D, Flatten, Dropout, Activation, MaxPooling1D
 from keras.optimizers import Adam
 from keras.callbacks import TensorBoard
 import tensorflow as tf
@@ -17,11 +17,6 @@ MODEL_NAME = 'STOCK_64X32X64D'
 UPDATE_TARGET_EVERY = 5
 MINIBATCH_SIZE = 100
 
-EPISODES = 10_000
-
-EPSILON = 1
-EPSILON_DECAY = 0.995
-EPSILON_MIN = 0.1
 
 class ModifiedTensorBoard(TensorBoard):
 
@@ -29,7 +24,7 @@ class ModifiedTensorBoard(TensorBoard):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.step = 1
-        self.writer = tf.summary.FileWriter(self.log_dir)
+        self.writer = tf.summary.create_file_writer(self.log_dir)
 
     # Overriding this method to stop creating default log writer
     def set_model(self, model):
@@ -58,6 +53,7 @@ class Agent:
     def __init__(self, env):
         self.env = env
         self.model = self.create_model()
+        self.target_model = self.create_model()
         self.target_model.set_weights(self.model.get_weights())
         
         self.replay_memory = deque(maxlen=REPLAY_MEMORY_SIZE)
@@ -69,14 +65,14 @@ class Agent:
     def create_model(self):
         model = Sequential()
         
-        model.add(Conv2D(64, kernel_size=(3,3), input_shape=self.env.observation_space.shape))
+        model.add(Conv1D(64, kernel_size=3, input_shape=self.env.observation_space.shape))
         model.add(Activation('relu'))
-        model.add(MaxPooling2D(pool_size=(2,2)))
+        model.add(MaxPooling1D(pool_size=2))
         model.add(Dropout(0.2))
         
-        model.add(Conv2D(32, kernel_size=(3,3), input_shape=self.env.observation_space.shape))
+        model.add(Conv1D(32, kernel_size=3))
         model.add(Activation('relu'))
-        model.add(MaxPooling2D(pool_size=(2,2)))
+        model.add(MaxPooling1D(pool_size=2))
         model.add(Dropout(0.2))
         
         model.add(Flatten())
@@ -95,3 +91,42 @@ class Agent:
             return
             
         minibatch = random.sample(self.replay_memory, MINIBATCH_SIZE)
+        
+        current_states = np.array([transition[0].values for transition in minibatch])
+        current_states = current_states.astype(np.float32)
+        current_qs_list = self.model.predict(current_states)
+
+        
+        new_current_states = np.array([transition[3] for transition in minibatch])
+        current_qs_list = self.model.predict(current_states)
+        
+        new_current_states = np.array([transition[3] for transition in minibatch])
+        future_qs_list = self.target_model.predict(new_current_states)
+        
+        X = []
+        Y = []
+        
+        for index, (current_state, action, reward, new_current_state, done) in enumerate(minibatch):
+            if not done:
+                max_fututre_q = np.max(future_qs_list[index])
+                new_q = reward + DISCOUNT * max_fututre_q
+            else:
+                new_q = reward
+                
+            current_qs = current_qs_list[index]
+            current_qs[action] = new_q
+            
+            X.append(current_state)
+            Y.append(current_qs)
+            
+            self.model.fit(np.array(X), np.array(Y), batch_size=MINIBATCH_SIZE, verbose=0, shuffle=False, callbacks=[self.tensorboard] if terminal_state else None)
+            
+            if terminal_state:
+                self.target_update_counter += 1
+                
+            if self.target_update_counter > UPDATE_TARGET_EVERY:
+                self.target_model.set_weights(self.model.get_weights())
+                self.target_update_counter = 0
+    
+    def get_qs(self, state):
+        return self.model.predict(np.array(state).reshape(-1, *state.shape))[0]

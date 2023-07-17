@@ -5,10 +5,12 @@ import numpy as np
 def read_data(filename):
     data = pd.read_csv(filename)
     assert data.ndim ==2, 'ERROR: Invalid Input'
-    data['Date'] = pd.to_datetime(data['Date'], format='%Y-%m-%d')
+    findata = data.drop('Date', axis=1)
+    # data['Date'] = pd.to_datetime(data['Date'], format='%Y-%m-%d')
     # data = data.set_index('Date')
-    data = data.sort_index()
-    return data
+    data = data.sort_index(ascending=False)
+    findata = data.drop('Date', axis=1)
+    return findata
 
 def normalize_data(data):
     columns_to_normalize = ['Open', 'High', 'Low', 'Close', 'Volume']

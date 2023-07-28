@@ -46,6 +46,9 @@ class MarketEnv:
         self.no_shares = 0
         self.hist = {}
         
+        initial_state = self._get_state().copy()
+        return initial_state
+        
     def _get_state(self):
         return self.data[(self._current - self.window_size +1): self._current+1]
 

@@ -1,6 +1,7 @@
 import tensorflow.keras as keras
 from keras.models import Sequential
 import tensorflow.keras.backend as backend
+from tensorflow.python.ops.summary_ops_v2 import create_file_writer
 from keras.layers import Dense, Conv1D, Flatten, Dropout, Activation, MaxPooling1D
 from keras.optimizers import Adam
 from keras.callbacks import TensorBoard
@@ -15,39 +16,34 @@ REPLAY_MEMORY_SIZE = 1_000
 MIN_REPLAY_MEMORY_SIZE = 100
 MODEL_NAME = 'STOCK_64X32X64D'
 UPDATE_TARGET_EVERY = 5
-MINIBATCH_SIZE = 100
+MINIBATCH_SIZE = 10
 
 
-class ModifiedTensorBoard(TensorBoard):
-
-    # Overriding init to set initial step and writer (we want one log file for all .fit() calls)
-    def __init__(self, **kwargs):
+class ModifiedTensorBoard(tf.keras.callbacks.Callback):
+    def __init__(self, log_dir, **kwargs):
         super().__init__(**kwargs)
-        self.step = 1
+        self.log_dir = log_dir
+        self.step = 0
         self.writer = tf.summary.create_file_writer(self.log_dir)
 
-    # Overriding this method to stop creating default log writer
-    def set_model(self, model):
-        pass
-
-    # Overrided, saves logs with our step number
-    # (otherwise every .fit() will start writing from 0th step)
     def on_epoch_end(self, epoch, logs=None):
         self.update_stats(**logs)
 
-    # Overrided
-    # We train for one batch only, no need to save anything at epoch end
     def on_batch_end(self, batch, logs=None):
         pass
 
-    # Overrided, so won't close writer
-    def on_train_end(self, _):
+    def on_train_end(self, logs=None):
         pass
 
-    # Custom method for saving own metrics
-    # Creates writer, writes custom metrics and closes writer
+    def _write_logs(self, logs, index):
+        with self.writer.as_default():
+            for name, value in logs.items():
+                tf.summary.scalar(name, value, step=index)
+                self.writer.flush()
+
     def update_stats(self, **stats):
         self._write_logs(stats, self.step)
+        self.step += 1
 
 class Agent:
     def __init__(self, env):
@@ -77,10 +73,10 @@ class Agent:
         
         model.add(Flatten())
         
-        model.add(Dense(64))
-        model.add(Activation('relu'))
+        model.add(Dense(32))
+        
         model.add(Dense(self.env.action_space.n, activation='linear'))
-        model.compile(loss="mse", optimizer=Adam(lr=0.001), metrics=['accuracy'])
+        model.compile(loss="mse", optimizer=Adam(learning_rate=0.001), metrics=['accuracy'])
         return model
     
     def update_replay_memory(self, transition):
@@ -91,15 +87,11 @@ class Agent:
             return
             
         minibatch = random.sample(self.replay_memory, MINIBATCH_SIZE)
+        # print(type(minibatch))
         
-        current_states = np.array([transition[0].values for transition in minibatch])
-        current_states = current_states.astype(np.float32)
+        current_states = np.array([transition[0] for transition in minibatch])
         current_qs_list = self.model.predict(current_states)
 
-        
-        new_current_states = np.array([transition[3] for transition in minibatch])
-        current_qs_list = self.model.predict(current_states)
-        
         new_current_states = np.array([transition[3] for transition in minibatch])
         future_qs_list = self.target_model.predict(new_current_states)
         

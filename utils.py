@@ -15,7 +15,7 @@ def read_data(filename):
 def normalize_data(data):
     columns_to_normalize = ['Open', 'High', 'Low', 'Close', 'Volume']
     # Scale the selected columns using min-max scaling
-    scale = MinMaxScaler(feature_range=(-1, 1))
+    scale = MinMaxScaler(feature_range=(0, 1))
     data.loc[:, columns_to_normalize] = scale.fit_transform(data.loc[:, columns_to_normalize])
 
     return data

@@ -5,13 +5,13 @@ import tensorflow as tf
 import os
 import time
 from utils import read_data, normalize_data, div_data
-from environment.environment import MarketEnv
+from environment.envi import MarketEnv
 from agent.agent import Agent, ModifiedTensorBoard
 
 data=read_data("data/TSLA.csv")
 test, train = div_data(data)
 # train = normalize_data(train)
-test = normalize_data(test)
+train = normalize_data(train)
 
 random.seed(1)
 np.random.seed(1)
@@ -21,10 +21,12 @@ if not os.path.isdir('models'):
     os.makedirs('models')
     
 ep_rewards = [-200]
+# print(data.head())
 
 env = MarketEnv(train)
+env.reset()
 
-EPISODES = 10_000
+EPISODES = 4
 MODEL_NAME = 'STOCK_64X32X64D'
 
 EPSILON = 1
@@ -32,14 +34,27 @@ EPSILON_DECAY = 0.995
 EPSILON_MIN = 0.1
 
 AGGREGATE_STATS_EVERY = 10
-MIN_REWARD = -100
+MIN_REWARD = -200
+
+# import cProfile
+
+# def run_env():
+#     for _ in range(50): 
+#         state = env.reset()
+#         done = False
+#         while not done:
+#             action = env.action_space.sample() 
+#             state, reward, done, _ = env.step(action)
+
+# cProfile.run('run_env()', sort='cumulative')
+
 
 # ctr = 0
 # while True:
 #     action = env.action_space.sample()
+#     # print(action)
 #     n_state, reward, done, info = env.step(action)
-#     print(f'{env.holdings}')
-#     print(f'info: {info}')
+#     # print(f'info: {info}')
 #     ctr+=1
 #     if done:
 #         print(f'info: {info}')
@@ -64,6 +79,7 @@ for episode in tqdm(range(1, EPISODES +1), ascii=True, unit='episodes'):
         
         episode_reward += reward
         
+        # print(f"Current state before update_replay_memory: {current_state}")
         agent.update_replay_memory((current_state, action, reward, new_state, done))
         agent.train(done, step)
         

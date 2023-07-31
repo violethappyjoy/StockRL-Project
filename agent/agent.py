@@ -12,11 +12,11 @@ import random
 import time
 
 DISCOUNT = 0.99
-REPLAY_MEMORY_SIZE = 1_000
-MIN_REPLAY_MEMORY_SIZE = 100
-MODEL_NAME = 'STOCK_64X32X64D'
-UPDATE_TARGET_EVERY = 5
-MINIBATCH_SIZE = 10
+REPLAY_MEMORY_SIZE = 10_000
+MIN_REPLAY_MEMORY_SIZE = 1000
+MODEL_NAME = 'STOCK_16X16X8D'
+UPDATE_TARGET_EVERY = 2
+MINIBATCH_SIZE = 8
 
 
 class ModifiedTensorBoard(tf.keras.callbacks.Callback):
@@ -61,22 +61,23 @@ class Agent:
     def create_model(self):
         model = Sequential()
         
-        model.add(Conv1D(64, kernel_size=3, input_shape=self.env.observation_space.shape))
+        model.add(Conv1D(16, kernel_size=3, input_shape=self.env.observation_space.shape))
         model.add(Activation('relu'))
         model.add(MaxPooling1D(pool_size=2))
         model.add(Dropout(0.2))
         
-        model.add(Conv1D(32, kernel_size=3))
-        model.add(Activation('relu'))
-        model.add(MaxPooling1D(pool_size=2))
-        model.add(Dropout(0.2))
+        # model.add(Conv1D(16, kernel_size=3))
+        # model.add(Activation('relu'))
+        # model.add(MaxPooling1D(pool_size=2))
+        # model.add(Dropout(0.2))
         
         model.add(Flatten())
         
-        model.add(Dense(32))
+        model.add(Dense(8))
         
         model.add(Dense(self.env.action_space.n, activation='linear'))
-        model.compile(loss="mse", optimizer=Adam(learning_rate=0.001), metrics=['accuracy'])
+        model.compile(loss="mse", optimizer=Adam(learning_rate=0.0001), metrics=['accuracy'])
+        model.summary()
         return model
     
     def update_replay_memory(self, transition):
@@ -87,13 +88,16 @@ class Agent:
             return
             
         minibatch = random.sample(self.replay_memory, MINIBATCH_SIZE)
-        # print(type(minibatch))
+        # print(minibatch)
         
         current_states = np.array([transition[0] for transition in minibatch])
+        # print(current_states)
         current_qs_list = self.model.predict(current_states)
+        # print(current_qs_list)
 
         new_current_states = np.array([transition[3] for transition in minibatch])
         future_qs_list = self.target_model.predict(new_current_states)
+        # print(future_qs_list)
         
         X = []
         Y = []

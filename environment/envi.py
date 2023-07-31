@@ -45,11 +45,26 @@ class MarketEnv:
         if action == Actions.Buy.value:
             minPrice = min(self._prev)
             profit = minPrice - current_price
-            self._total_profit += profit
+            # self._total_profit += profit
+            return profit
         elif action == Actions.Sell.value:
             maxPrice = max(self._prev)
             profit = current_price - maxPrice
-            self._total_profit += profit      
+            return profit
+            # self._total_profit += profit
+        else:
+            return 0
+            
+    # def _get_reward(self, action):
+    #     current_price = self.prices[self._current]
+    #     if action == Actions.Buy.value:
+    #         min_prev = min(self._prev)
+    #         return min_prev - current_price
+    #     elif action == Actions.Sell.value:
+    #         max_prev = max(self._prev)
+    #         return current_price - max_prev
+    #     else:
+    #         return 0 
             
     
     def step(self, action):
@@ -62,18 +77,12 @@ class MarketEnv:
         if self._current == self._end:
             self._done = True
         
-        profit = self._total_profit
         # print(profit)
-        self._update_profit(action)
+        step_reward = self._update_profit(action)
+        self._total_profit += step_reward
         # print(self._total_profit)
-        # step_reward = 0
-        if self._total_profit >= profit:
-            step_reward = 1
-        elif action == Actions.Hold.value:
-            step_reward = 0
-        else:
-            step_reward = -1
         
+        # step_reward = np.clip(step_reward, -1, 1)
         # print(step_reward)
             
         self._total_reward += step_reward

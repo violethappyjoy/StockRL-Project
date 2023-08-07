@@ -12,11 +12,11 @@ import random
 import time
 
 DISCOUNT = 0.99
-REPLAY_MEMORY_SIZE = 10_000
-MIN_REPLAY_MEMORY_SIZE = 1000
-MODEL_NAME = 'STOCK_16X16X8D'
+REPLAY_MEMORY_SIZE = 50_000
+MIN_REPLAY_MEMORY_SIZE = 1_000
+MODEL_NAME = 'STOCK_16X16X8D_MAXPOOLING_FIXED'
 UPDATE_TARGET_EVERY = 2
-MINIBATCH_SIZE = 8
+MINIBATCH_SIZE = 64
 
 
 class ModifiedTensorBoard(tf.keras.callbacks.Callback):
@@ -60,23 +60,22 @@ class Agent:
         
     def create_model(self):
         model = Sequential()
-        
+    
         model.add(Conv1D(16, kernel_size=3, input_shape=self.env.observation_space.shape))
         model.add(Activation('relu'))
         model.add(MaxPooling1D(pool_size=2))
         model.add(Dropout(0.2))
-        
-        # model.add(Conv1D(16, kernel_size=3))
-        # model.add(Activation('relu'))
-        # model.add(MaxPooling1D(pool_size=2))
-        # model.add(Dropout(0.2))
-        
+    
+        model.add(Conv1D(16, kernel_size=3))
+        model.add(Activation('relu'))
+        model.add(MaxPooling1D(pool_size=2))
+        model.add(Dropout(0.2))
+    
         model.add(Flatten())
-        
         model.add(Dense(8))
-        
         model.add(Dense(self.env.action_space.n, activation='linear'))
-        model.compile(loss="mse", optimizer=Adam(learning_rate=0.0001), metrics=['accuracy'])
+    
+        model.compile(loss="mse", optimizer=Adam(learning_rate=0.001), metrics=['accuracy'])
         model.summary()
         return model
     
@@ -115,14 +114,14 @@ class Agent:
             X.append(current_state)
             Y.append(current_qs)
             
-            self.model.fit(np.array(X), np.array(Y), batch_size=MINIBATCH_SIZE, verbose=0, shuffle=False, callbacks=[self.tensorboard] if terminal_state else None)
+        self.model.fit(np.array(X), np.array(Y), batch_size=MINIBATCH_SIZE, shuffle=False, verbose=0, callbacks=[self.tensorboard] if terminal_state else None)
             
-            if terminal_state:
-                self.target_update_counter += 1
+        if terminal_state:
+            self.target_update_counter += 1
                 
-            if self.target_update_counter > UPDATE_TARGET_EVERY:
-                self.target_model.set_weights(self.model.get_weights())
-                self.target_update_counter = 0
+        if self.target_update_counter > UPDATE_TARGET_EVERY:
+            self.target_model.set_weights(self.model.get_weights())
+            self.target_update_counter = 0
     
     def get_qs(self, state):
-        return self.model.predict(np.array(state).reshape(-1, *state.shape))[0]
+        return self.model.predict(np.array(state).reshape(-1, *state.shape)/255)[0]

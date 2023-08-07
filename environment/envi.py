@@ -2,6 +2,10 @@ import numpy as np
 from enum import Enum
 from collections import deque
 from environment.env_var import Box, OneD
+import matplotlib.pyplot as plt
+from matplotlib import rc_params as params
+import matplotlib.colors as mcolors
+import time
 
 class Actions(Enum):
     Sell = 0
@@ -54,17 +58,30 @@ class MarketEnv:
             # self._total_profit += profit
         else:
             return 0
+        
+    def render(self, actions, show_colorbar=False):
+        siz = len(actions)
+        prices = self.prices[(self._current-siz):self._current]
+        # print(f'len={len(prices)}, len action = {siz}, arr = {prices}')
+        
+        plt.plot(range(siz), prices, c='b', label = 'Main', zorder=1)
+        action_map = mcolors.ListedColormap(['green', 'red'])
+        plt.scatter(range(siz), prices, c=actions, cmap=action_map, marker='o', label = 'Actions', s=2, zorder = 2)
+        params = {'axes.linewidth': 2, 'xtick.major.width': 2, 'ytick.major.width': 2, 'font.size': 14}
+        plt.rcParams.update(params)
+        
+        plt.xlabel('X-axis')
+        plt.ylabel('Prices')
+        
+        if show_colorbar:
+            cbar = plt.colorbar(ticks=[0.50, 1.50])
+            cbar.ax.set_yticklabels(['Sell', 'Buy'], rotation=270)
+            cbar.set_label('Action', rotation=270)
+        # plt.show()
+        plt.savefig(f'graphs/action_{self._current}_{time.time()}.png', dpi=400)
+        plt.savefig(f'graphs/action_{self._current}_{time.time()}.pdf', dpi=400)
             
-    # def _get_reward(self, action):
-    #     current_price = self.prices[self._current]
-    #     if action == Actions.Buy.value:
-    #         min_prev = min(self._prev)
-    #         return min_prev - current_price
-    #     elif action == Actions.Sell.value:
-    #         max_prev = max(self._prev)
-    #         return current_price - max_prev
-    #     else:
-    #         return 0 
+          
             
     
     def step(self, action):

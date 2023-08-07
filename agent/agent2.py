@@ -16,11 +16,9 @@ import time
 def create_model(self):
     model = Sequential()
     
-    # First Conv1D layer with strided convolution (stride=2)
     model.add(Conv1D(16, kernel_size=3, strides=2, input_shape=self.env.observation_space.shape))
     model.add(Activation('relu'))
     
-    # Second Conv1D layer with strided convolution (stride=2)
     model.add(Conv1D(16, kernel_size=3, strides=2))
     model.add(Activation('relu'))
     
@@ -31,3 +29,26 @@ def create_model(self):
     model.compile(loss="mse", optimizer=Adam(learning_rate=0.001), metrics=['accuracy'])
     model.summary()
     return model
+
+
+# def create_model(self):
+#         model = Sequential()
+        
+#         model.add(Conv1D(16, kernel_size=3, input_shape=self.env.observation_space.shape))
+#         model.add(Activation('relu'))
+#         # model.add(MaxPooling1D(pool_size=2))
+#         model.add(Dropout(0.2))
+        
+#         model.add(Conv1D(16, kernel_size=3))
+#         model.add(Activation('relu'))
+#         model.add(MaxPooling1D(pool_size=2))
+#         model.add(Dropout(0.2))
+        
+#         model.add(Flatten())
+        
+#         # model.add(Dense(8))
+        
+#         model.add(Dense(self.env.action_space.n, activation='linear'))
+#         model.compile(loss="mse", optimizer=Adam(learning_rate=0.0001), metrics=['accuracy'])
+#         model.summary()
+#         return model

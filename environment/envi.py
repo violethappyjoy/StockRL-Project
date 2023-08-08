@@ -70,7 +70,7 @@ class MarketEnv:
         params = {'axes.linewidth': 2, 'xtick.major.width': 2, 'ytick.major.width': 2, 'font.size': 14}
         plt.rcParams.update(params)
         
-        plt.xlabel('X-axis')
+        plt.xlabel('Time(Days)')
         plt.ylabel('Prices')
         
         if show_colorbar:

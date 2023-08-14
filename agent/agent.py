@@ -78,7 +78,7 @@ class Agent:
     
         model.compile(loss="mse", optimizer=Adam(learning_rate=0.001), metrics=['accuracy'])
         model.summary()
-        plot_model(model, to_file='graphs/model.png', show_shapes=True, show_layer_names=True, show_trainable=True)
+        plot_model(model, to_file='graphs/model.png', show_shapes=True, show_layer_names=True, rankdir='LR')
         return model
     
     def update_replay_memory(self, transition):

@@ -1,6 +1,7 @@
 import tensorflow.keras as keras
 from keras.models import Sequential
-from keras.utils import plot_model
+from keras_sequential_ascii import keras2ascii
+import visualkeras
 import tensorflow.keras.backend as backend
 from tensorflow.python.ops.summary_ops_v2 import create_file_writer
 from keras.layers import Dense, Conv1D, Flatten, Dropout, Activation, MaxPooling1D
@@ -77,8 +78,9 @@ class Agent:
         model.add(Dense(self.env.action_space.n, activation='linear'))
     
         model.compile(loss="mse", optimizer=Adam(learning_rate=0.001), metrics=['accuracy'])
-        model.summary()
-        plot_model(model, to_file='graphs/model.png', show_shapes=True, show_layer_names=True, rankdir='LR')
+        # model.summary()
+        keras2ascii(model)
+        visualkeras.layered_view(model, legend=True, to_file='graphs/model2.png').show()
         return model
     
     def update_replay_memory(self, transition):

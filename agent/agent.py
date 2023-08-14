@@ -1,5 +1,6 @@
 import tensorflow.keras as keras
 from keras.models import Sequential
+from keras.utils import plot_model
 import tensorflow.keras.backend as backend
 from tensorflow.python.ops.summary_ops_v2 import create_file_writer
 from keras.layers import Dense, Conv1D, Flatten, Dropout, Activation, MaxPooling1D
@@ -77,6 +78,7 @@ class Agent:
     
         model.compile(loss="mse", optimizer=Adam(learning_rate=0.001), metrics=['accuracy'])
         model.summary()
+        plot_model(model, to_file='graphs/model.png', show_shapes=True, show_layer_names=True, show_layer_activations=True)
         return model
     
     def update_replay_memory(self, transition):
@@ -124,4 +126,4 @@ class Agent:
             self.target_update_counter = 0
     
     def get_qs(self, state):
-        return self.model.predict(np.array(state).reshape(-1, *state.shape)/255)[0]
+        return self.model.predict(np.array(state).reshape(-1, *state.shape))[0]

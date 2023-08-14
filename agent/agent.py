@@ -62,13 +62,13 @@ class Agent:
     def create_model(self):
         model = Sequential()
     
-        model.add(Conv1D(16, kernel_size=3, input_shape=self.env.observation_space.shape))
-        model.add(Activation('relu'))
+        model.add(Conv1D(16, kernel_size=3, input_shape=self.env.observation_space.shape, activation='relu'))
+        # model.add(Activation('relu'))
         model.add(MaxPooling1D(pool_size=2))
         model.add(Dropout(0.2))
     
-        model.add(Conv1D(16, kernel_size=3))
-        model.add(Activation('relu'))
+        model.add(Conv1D(16, kernel_size=3, activation='relu'))
+        # model.add(Activation('relu'))
         model.add(MaxPooling1D(pool_size=2))
         model.add(Dropout(0.2))
     
@@ -78,7 +78,7 @@ class Agent:
     
         model.compile(loss="mse", optimizer=Adam(learning_rate=0.001), metrics=['accuracy'])
         model.summary()
-        plot_model(model, to_file='graphs/model.png', show_shapes=True, show_layer_names=True)
+        plot_model(model, to_file='graphs/model.png', show_shapes=True, show_layer_names=True, show_trainable=True)
         return model
     
     def update_replay_memory(self, transition):
